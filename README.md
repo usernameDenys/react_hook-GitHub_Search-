@@ -1,73 +1,76 @@
-# React + TypeScript + Vite
+# GitHub User Search
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A minimal React application that lets you search for any GitHub profile by username and displays their public information in real time.
 
-Currently, two official plugins are available:
+## What It Does
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Type a GitHub username into the input field and the app instantly fetches and renders the user's profile data from the GitHub REST API — no button click required. It shows:
 
-## React Compiler
+- Avatar
+- Name and bio
+- Location
+- Blog / website link
+- Number of public repositories
+- Account creation date
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Project Structure
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── hooks/
+│   └── useGitHub.ts        # Custom hook — all data-fetching logic lives here
+├── components/
+│   ├── FindeUser.tsx        # Search input + conditional rendering
+│   └── GitHubUsers.tsx      # Profile card that consumes the hook
+└── App.tsx                  # Root component
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Custom Hook — `useGitHub`
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+**File:** `src/hooks/useGitHub.ts`
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+The hook encapsulates every concern related to fetching a GitHub user profile:
+
+```ts
+const useGitHub = (userName: string) => { ... }
 ```
+
+### Parameters
+
+| Parameter  | Type     | Description                    |
+|------------|----------|--------------------------------|
+| `userName` | `string` | The GitHub username to look up |
+
+### Returns
+
+| Value     | Type                | Description                                     |
+|-----------|---------------------|-------------------------------------------------|
+| `user`    | `UserTypes \| null` | Parsed user object on success, `null` otherwise |
+| `loading` | `boolean`           | `true` while the request is in flight           |
+| `error`   | `string \| null`    | Human-readable error message, or `null`         |
+
+### How It Works
+
+1. `useEffect` runs every time `userName` changes.
+2. If `userName` is an empty string the effect exits early — no unnecessary requests are made.
+3. The hook calls `https://api.github.com/users/{userName}`.
+4. Specific HTTP status codes are translated into friendly messages:
+   - **404** → `"User not found. Check the username and try again."`
+   - **403** → `"API rate limit exceeded. Please wait a minute and try again."`
+5. The result (`user`, `loading`, `error`) is returned as a plain object and consumed by the `GitHubUser` component.
+
+
+## Tech Stack
+
+- **React 19** with TypeScript
+- **Vite** — build tool and dev server
+- GitHub REST API (public, no auth token required for basic profile lookups)
+
+## Getting Started
+
+```bash
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173` and start typing a GitHub username.
